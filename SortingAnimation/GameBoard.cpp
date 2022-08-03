@@ -5,6 +5,7 @@ SortingTask sorting(vec& board, int pivot, int left, int right, int* result);
 SortingTask QuickSort(vec& board, int start, int end);
 SortingTask SelectionSort(vec& board, int start, int end);
 SortingTask BubbleSort(vec& board, int start, int end);
+SortingTask MergeSort(vec& board, int left, int right);
 inline void Randomization(vec& nums);
 
 void GameBoard::draw(RenderTarget& target, RenderStates states) const {
@@ -46,6 +47,9 @@ void GameBoard::StartSorting(SortingMode mode) {
         break;
     case SortingMode::QuickSort:
         curTask = new SortingTask(QuickSort(MainBoard, 0, RodCount));
+        break;
+    case SortingMode::MergeSort:
+        curTask = new SortingTask(MergeSort(MainBoard, 0, RodCount));
         break;
     }  
 }
@@ -104,7 +108,7 @@ void GameBoard::Reset() {
 
 template<typename T>
 inline void myswap(T& a, T& b) {
-    T temp = a;
+    int temp = a;
     a = b;
     b = temp;
 }
@@ -173,6 +177,47 @@ SortingTask BubbleSort(vec& board, int start, int end) {
                 co_yield{ j, j + 1 };
             }
         }
+    }
+}
+
+SortingTask MergeSort(vec& board, int left, int right) {
+    if (left >= right - 1) {
+        co_return;
+    }
+    int mid = (left + right-1) / 2;
+    SortingTask tempTask1 = MergeSort(board, left, mid+1);
+    while (true) {
+        tempTask1.co_handler.resume();
+        if (tempTask1.co_handler.done()) break;
+        co_yield tempTask1.co_handler.promise().value;
+    }
+    SortingTask tempTask2 = MergeSort(board, mid + 1, right);
+    while (true) {
+        tempTask2.co_handler.resume();
+        if (tempTask2.co_handler.done()) break;
+        co_yield tempTask2.co_handler.promise().value;
+    }
+    vec curarr(right - left);
+    int lpos = mid, rpos = right - 1;
+    int idx = right - left - 1;
+
+    while (lpos >= left || rpos > mid) {
+        while (lpos >= left && (rpos == mid || board[lpos] > board[rpos])) {
+            curarr[idx] = board[lpos];
+            lpos--;
+            idx--;
+        }
+        while (rpos > mid && (lpos == left - 1 || board[lpos] <= board[rpos])) {
+            curarr[idx] = board[rpos];
+            rpos--;
+            idx--;
+        }
+    }
+    idx = left;
+    for (int i = 0; i < curarr.size(); i++) {
+        board[idx] = curarr[i];
+        co_yield{ idx, i + left };
+        idx++;
     }
 }
 

@@ -7,7 +7,8 @@ using namespace sf;
 enum class SortingMode {
     SelectionSort,
     BubbleSort,
-    QuickSort
+    QuickSort,
+    MergeSort
 };
 
 class GameBoard : public Drawable, public Transformable {
